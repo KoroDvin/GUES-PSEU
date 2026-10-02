@@ -302,15 +302,28 @@
    =====================================================
    Инструкция ниже в сообщении. После замены — сохрани файл.
 */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "ЗАМЕНИ_НА_СВОЙ_API_KEY",
-  authDomain: "ЗАМЕНИ.firebaseapp.com",
-  databaseURL: "https://ЗАМЕНИ-default-rtdb.firebaseio.com",
-  projectId: "ЗАМЕНИ",
-  storageBucket: "ЗАМЕНИ.appspot.com",
-  messagingSenderId: "ЗАМЕНИ",
-  appId: "ЗАМЕНИ"
+  apiKey: "AIzaSyAFICd4xZIHtjPxqGzR8M7UYdATOCxmbgA",
+  authDomain: "gues-956bb.firebaseapp.com",
+  databaseURL: "https://gues-956bb-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "gues-956bb",
+  storageBucket: "gues-956bb.firebasestorage.app",
+  messagingSenderId: "762212631218",
+  appId: "1:762212631218:web:f9f5e5257c86ff31c4ffab",
+  measurementId: "G-6SPX2M5XE8"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 let db = null;          // ссылка на Realtime Database
 let fbReady = false;    // подключён ли Firebase
