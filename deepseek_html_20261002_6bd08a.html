@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="data:,">
+<title>ГУЕС — Государственные Услуги Европейского Союза</title>
+<style>
+  :root{
+    --accent:#0000c2;--bg:#ffffff;--panel:#ffffff;--text:#1a1a1a;
+    --muted:#6b7280;--border:#e5e7eb;--sidebar-head:#e6f2fb;--danger:#d92d20;
+  }
+  body.dark{--bg:#0f1115;--panel:#151821;--text:#f1f5f9;--muted:#94a3b8;--border:#242938;--sidebar-head:#132030;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{background:var(--bg);color:var(--text);transition:background .35s,color .35s;height:100vh;overflow:hidden;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-16px);}to{opacity:1;transform:translateX(0);}}
+  @keyframes pop{0%{transform:scale(.85);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  @keyframes floatUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes gradientMove{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+  @keyframes floatFlag{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
+  #authScreen{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0000c2,#4a4aff);background-size:200% 200%;animation:gradientMove 8s ease infinite;}
+  .auth-card{background:var(--panel);padding:40px;border-radius:16px;width:380px;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:pop .5s;}
+  .auth-card h1{color:var(--accent);font-size:26px;text-align:center;margin-bottom:6px;}
+  .auth-card p.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:22px;}
+  .auth-card input{width:100%;padding:11px 13px;margin-bottom:11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:14px;transition:.2s;}
+  .auth-card input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,194,.15);}
+  .auth-card label{font-size:12.5px;color:var(--muted);display:block;margin-bottom:6px;}
+  .auth-card button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:15px;font-weight:600;cursor:pointer;transition:.2s;}
+  .auth-card button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,194,.35);}
+  .switch{text-align:center;margin-top:14px;font-size:13px;color:var(--muted);}
+  .switch a{color:var(--accent);cursor:pointer;font-weight:600;text-decoration:none;}
+  .err{color:var(--danger);font-size:12.5px;margin-bottom:8px;min-height:16px;}
+  .ok-msg{color:#16a34a;font-size:12.5px;margin-bottom:8px;min-height:16px;}
+  #app{display:none;height:100vh;}
+  .layout{display:flex;height:100vh;}
+  .sidebar{width:300px;min-width:300px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+  .profile-head{background:var(--sidebar-head);padding:18px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);cursor:pointer;transition:.25s;}
+  .profile-head:hover{background:var(--accent);color:#fff;}
+  .profile-head:hover .info span{color:#dfe6ff;}
+  .avatar{width:48px;height:48px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;transition:.25s;}
+  .profile-head:hover .avatar{transform:rotate(-6deg) scale(1.06);}
+  .profile-head .info h3{font-size:15px;font-weight:700;}
+  .profile-head .info span{font-size:12.5px;color:var(--accent);transition:.25s;}
+  .search-box{padding:12px 14px;}
+  .search-box input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13.5px;}
+  .search-box input:focus{outline:none;border-color:var(--accent);}
+  .logout{padding:8px 18px 12px;color:var(--danger);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);transition:.2s;}
+  .logout:hover{background:rgba(217,45,32,.08);padding-left:24px;}
+  .section-title{padding:12px 18px 4px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;}
+  .nav-actions{display:flex;gap:10px;padding:14px 18px;border-bottom:1px solid var(--border);}
+  .nav-actions button{flex:1;padding:9px;border:1px solid var(--border);background:var(--bg);color:var(--text);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;}
+  .nav-actions button:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+  .sidebar-scroll{flex:1;overflow-y:auto;}
+  .group-label{padding:12px 18px 6px;font-size:12px;color:var(--muted);font-weight:600;}
+  .contact{display:flex;align-items:center;gap:12px;padding:9px 18px;cursor:pointer;transition:.2s;animation:slideIn .3s both;}
+  .contact:hover{background:var(--sidebar-head);padding-left:24px;}
+  .contact .avatar{width:40px;height:40px;font-size:15px;}
+  .contact .txt h4{font-size:14px;font-weight:600;}
+  .contact .txt span{font-size:12px;color:var(--muted);}
+  .main{flex:1;display:flex;flex-direction:column;overflow-y:auto;background:var(--bg);}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--border);background:var(--panel);}
+  .greeting{font-size:16px;font-weight:600;}
+  .greeting b{color:var(--accent);}
+  .top-actions{display:flex;gap:10px;align-items:center;}
+  .btn{padding:9px 15px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);cursor:pointer;font-size:13.5px;font-weight:600;transition:.2s;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn.primary:hover{opacity:.92;color:#fff;}
+  .btn.danger{background:var(--danger);color:#fff;border-color:var(--danger);}
+  .content{padding:28px;flex:1;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:22px;margin-bottom:18px;animation:floatUp .45s both;transition:.25s;}
+  .card:hover{border-color:var(--accent);box-shadow:0 8px 22px rgba(0,0,194,.08);}
+  .card h2{font-size:17px;margin-bottom:14px;color:var(--accent);}
+  .card p{font-size:14px;color:var(--muted);line-height:1.6;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;}
+  .tile{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:20px;cursor:pointer;transition:.25s;animation:floatUp .45s both;}
+  .tile:hover{border-color:var(--accent);transform:translateY(-4px) scale(1.02);box-shadow:0 12px 28px rgba(0,0,194,.15);}
+  .tile .ic{font-size:26px;margin-bottom:8px;display:inline-block;transition:.3s;}
+  .tile:hover .ic{transform:scale(1.2) rotate(-8deg);}
+  .tile h4{font-size:15px;margin-bottom:4px;}
+  .tile span{font-size:12.5px;color:var(--muted);}
+  .welcome-center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted);}
+  .welcome-center h1{font-size:44px;color:var(--accent);font-weight:300;letter-spacing:-1px;margin-bottom:10px;animation:pop .6s;}
+  .form-row{margin-bottom:14px;}
+  .form-row label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;}
+  .form-row input,.form-row select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:14px;transition:.2s;font-family:inherit;}
+  .form-row input:focus,.form-row select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,0,194,.12);}
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .passport{background:linear-gradient(135deg,#0000c2,#3a3aff,#0000c2);background-size:200% 200%;animation:gradientMove 6s ease infinite;color:#fff;border-radius:16px;padding:24px;max-width:600px;position:relative;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,194,.35);}
+  .passport::before{content:"";position:absolute;top:-50px;right:-50px;width:200px;height:200px;background:rgba(255,255,255,.06);border-radius:50%;}
+  .passport .flag{position:absolute;top:18px;right:18px;font-size:34px;animation:floatFlag 3s ease-in-out infinite;}
+  .passport h3{font-size:12px;letter-spacing:3px;opacity:.85;margin-bottom:18px;}
+  .passport .pass-body{display:flex;gap:20px;align-items:flex-start;}
+  .passport .photo{width:110px;height:140px;border-radius:8px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:12px;overflow:hidden;flex-shrink:0;}
+  .passport .photo img{width:100%;height:100%;object-fit:cover;}
+  .passport .fields{flex:1;}
+  .passport .field{margin-bottom:10px;}
+  .passport .field small{font-size:10.5px;opacity:.75;display:block;letter-spacing:1px;}
+  .passport .field b{font-size:14.5px;font-weight:600;}
+  .passport .children{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.25);}
+  .table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:10px;}
+  .table th,.table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;}
+  .table th{background:var(--sidebar-head);color:var(--accent);font-weight:700;font-size:12.5px;}
+  .table tr:hover{background:var(--sidebar-head);}
+  .grade{display:inline-block;padding:2px 9px;border-radius:6px;font-weight:700;font-size:12.5px;margin-right:4px;animation:pop .3s both;}
+  .grade.g5{background:#16a34a;color:#fff;}
+  .grade.g4{background:#0ea5e9;color:#fff;}
+  .grade.g3{background:#f59e0b;color:#fff;}
+  .grade.g2{background:#ef4444;color:#fff;}
+  .hw{font-size:13px;color:var(--muted);padding:8px 0;border-bottom:1px dashed var(--border);}
+  .hw b{color:var(--text);}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:5000;display:flex;align-items:center;justify-content:center;animation:fadeIn .25s both;}
+  .modal{background:var(--panel);color:var(--text);border-radius:16px;padding:28px;max-width:560px;width:92%;max-height:88vh;overflow-y:auto;animation:pop .3s both;box-shadow:0 25px 60px rgba(0,0,0,.4);}
+  .modal h2{color:var(--accent);margin-bottom:18px;font-size:19px;}
+  .modal .close{float:right;background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);}
+  .modal .close:hover{color:var(--danger);transform:rotate(90deg);}
+  #maintenance{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;align-items:center;justify-content:center;}
+  #maintenance .box{background:#fff;color:#111;padding:40px;border-radius:14px;text-align:center;max-width:420px;animation:pop .4s;}
+  #maintenance h2{color:#d92d20;margin-bottom:12px;}
+  .switch-theme{position:relative;width:44px;height:24px;background:var(--border);border-radius:20px;cursor:pointer;transition:.3s;}
+  .switch-theme::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  body.dark .switch-theme{background:var(--accent);}
+  body.dark .switch-theme::after{left:22px;}
+  .placeholder-msg{text-align:center;padding:60px 20px;color:var(--muted);}
+  .placeholder-msg .ic{font-size:48px;margin-bottom:14px;}
+  .schedule-day{margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;}
+  .schedule-day h3{font-size:14px;color:var(--accent);margin-bottom:8px;}
+  .lesson-row{display:flex;gap:12px;padding:6px 0;font-size:13.5px;}
+  .lesson-num{width:26px;font-weight:700;color:var(--accent);}
+  .lesson-subj{flex:1;}
+  .lesson-time{color:var(--muted);font-size:12.5px;}
+  .firebase-status{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;}
+  .firebase-status.on{background:#dcfce7;color:#166534;}
+  .firebase-status.off{background:#fee2e2;color:#991b1b;}
+</style>
+</head>
+<body>
+
+<div id="authScreen">
+  <div class="auth-card">
+    <h1>ГУЕС</h1>
+    <p class="sub">Государственные Услуги Европейского Союза</p>
+    <div class="err" id="authErr"></div>
+    <div class="ok-msg" id="authOk"></div>
+    <div id="loginForm">
+      <input type="email" id="loginEmail" placeholder="Эл. почта (@gmail.com)">
+      <input type="password" id="loginPass" placeholder="Пароль">
+      <button onclick="doLogin()">Войти</button>
+      <div class="switch">Нет аккаунта? <a onclick="showRegister()">Зарегистрироваться</a></div>
+    </div>
+    <div id="registerForm" style="display:none">
+      <input type="text" id="regName" placeholder="Имя и фамилия">
+      <input type="email" id="regEmail" placeholder="Эл. почта (@gmail.com)">
+      <input type="password" id="regPass" placeholder="Пароль (мин. 6 символов)">
+      <label>Дата рождения</label>
+      <input type="date" id="regBirth">
+      <input type="text" id="regSnils" placeholder="СНИЛС (напр. 123-456-789 00)">
+      <button onclick="doRegister()">Создать аккаунт</button>
+      <div class="switch">Уже есть аккаунт? <a onclick="showLogin()">Войти</a></div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+<div class="layout">
+  <aside class="sidebar">
+    <div class="profile-head" onclick="openModal('profile')" title="Открыть профиль">
+      <div class="avatar" id="sideAvatar">А</div>
+      <div class="info"><h3 id="sideName">Пользователь</h3><span id="sideRole">Гражданин ЕС</span></div>
+    </div>
+    <div class="search-box"><input type="text" placeholder="🔍 Поиск"></div>
+    <div class="logout" onclick="doLogout()">↩ Выход</div>
+    <div class="section-title">СЕРВИСЫ</div>
+    <div class="nav-actions">
+      <button onclick="openPage('newApp')">+ Заявка</button>
+      <button onclick="openPage('askAdmin')">❓ Вопрос</button>
+    </div>
+    <div class="sidebar-scroll">
+      <div class="group-label">Сегодня</div>
+      <div class="contact" onclick="openPage('doctor')"><div class="avatar" style="background:#16a34a">🏥</div><div class="txt"><h4>Запись к врачу</h4><span>Поликлиники ЕС</span></div></div>
+      <div class="contact" onclick="openPage('school')"><div class="avatar" style="background:#f59e0b">🎒</div><div class="txt"><h4>Детский сад / Школа</h4><span>Запись и перевод</span></div></div>
+      <div class="contact" onclick="openPage('diary')"><div class="avatar" style="background:#ef4444">📖</div><div class="txt"><h4>Электронный дневник</h4><span>Школьникам</span></div></div>
+      <div class="contact" onclick="openPage('journal')"><div class="avatar" style="background:#7c3aed">📓</div><div class="txt"><h4>Журнал учителя</h4><span>Только для учителей</span></div></div>
+      <div class="group-label">Ранее</div>
+      <div class="contact" onclick="openPage('passport')"><div class="avatar" style="background:#0000c2">🛂</div><div class="txt"><h4>Паспорт ЕС</h4><span>Создание и продление</span></div></div>
+      <div class="contact" onclick="openPage('residence')"><div class="avatar" style="background:#7c3aed">🏠</div><div class="txt"><h4>Место жительства</h4><span>Регистрация адреса</span></div></div>
+      <div class="contact" onclick="openPage('child')"><div class="avatar" style="background:#0ea5e9">👶</div><div class="txt"><h4>Детский аккаунт</h4><span>Для родителей</span></div></div>
+      <div class="contact" onclick="openPage('car')"><div class="avatar" style="background:#111827">🚗</div><div class="txt"><h4>Номер машины</h4><span>Регистрация авто</span></div></div>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div class="greeting" id="greeting">Добрый день, <b>Пользователь</b>!</div>
+      <div class="top-actions">
+        <span class="firebase-status off" id="fbStatus">Firebase: выкл</span>
+        <button class="btn" onclick="openPage('askAdmin')">❓ Вопрос админу</button>
+        <div class="switch-theme" onclick="toggleTheme()" title="Тема"></div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="maintenance"><div class="box"><h2>Извините, ведутся технические работы.</h2><p>Пожалуйста, зайдите позже.</p></div></div>
+
+<!-- Firebase compat SDK (БЕЗ import, работает в обычном script) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* ============ 🔥 ЗАМЕНИ НА СВОЙ КОНФИГ FIREBASE ============ */
+const firebaseConfig = {
+  apiKey: "ЗАМЕНИ",
+  authDomain: "ЗАМЕНИ.firebaseapp.com",
+  databaseURL: "https://ЗАМЕНИ-default-rtdb.firebaseio.com",
+  projectId: "ЗАМЕНИ",
+  storageBucket: "ЗАМЕНИ.appspot.com",
+  messagingSenderId: "ЗАМЕНИ",
+  appId: "ЗАМЕНИ"
+};
+
+let db = null, fbReady = false;
+try{
+  if(firebaseConfig.apiKey !== "ЗАМЕНИ"){
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    fbReady = true;
+  }
+}catch(e){ console.warn('Firebase не подключён:', e); }
+
+/* ============ КОНСТАНТЫ ============ */
+const STORAGE_USERS='gues_users', STORAGE_SESSION='gues_session',
+      STORAGE_MAINT='gues_maintenance', STORAGE_THEME='gues_theme';
+
+const COUNTRIES = ["Австрия","Бельгия","Болгария","Венгрия","Великобритания","Германия","Греция","Дания","Ирландия","Испания","Италия (Ватикан, Сан-Марино)","Кипр","Латвия","Литва","Лихтенштейн","Люксембург","Мальта","Нидерланды","Норвегия","Польша","Португалия","Румыния","Словакия","Словения","Финляндия","Франция (Монако, Андорра)","Хорватия","Чехия","Швеция","Эстония"];
+const PROFESSIONS = ["Гражданин ЕС","Учитель","Врач","Инженер","Полицейский","Юрист","Программист","Экономист","Строитель","Водитель","Повар","Продавец","Учёный","Дизайнер","Журналист","Военный","Пожарный","Медсестра / медбрат","Воспитатель","Архитектор","Бухгалтер","Психолог","Ветеринар","Фармацевт","Библиотекарь","Актёр","Музыкант","Художник","Писатель","Переводчик","Пенсионер","Студент","Безработный"];
+
+const PLATE_FORMATS = {
+  "Австрия":[{mask:"W00000X",desc:"W + 5 цифр + буква"},{mask:"W0000XX",desc:"W + 4 цифры + 2 буквы"},{mask:"XX000XX",desc:"2 буквы + 3 цифры + 2 буквы"}],
+  "Бельгия":[{mask:"0XXX000",desc:"1 цифра + 3 буквы + 3 цифры"},{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Болгария":[{mask:"XX0000X",desc:"2 буквы + 4 цифры + буква"},{mask:"XX0000XX",desc:"2 буквы + 4 цифры + 2 буквы"},{mask:"X0000XX",desc:"1 буква + 4 цифры + 2 буквы"}],
+  "Великобритания":[{mask:"XX00XXX",desc:"2 буквы + 2 цифры + 3 буквы"}],
+  "Венгрия":[{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Германия":[{mask:"XX0000",desc:"2 буквы + 4 цифры"},{mask:"XX00000",desc:"2 буквы + 5 цифр"}],
+  "Греция":[{mask:"XXX0000",desc:"3 буквы + 4 цифры"}],
+  "Дания":[{mask:"XX00000",desc:"2 буквы + 5 цифр"}],
+  "Ирландия":[{mask:"000XX00000",desc:"00-X(X)-00000"}],
+  "Испания":[{mask:"0000XXX",desc:"4 цифры + 3 буквы"}],
+  "Италия (Ватикан, Сан-Марино)":[{mask:"XX000XX",desc:"2 буквы + 3 цифры + 2 буквы"}],
+  "Кипр":[{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Латвия":[{mask:"XX0000",desc:"2 буквы + 4 цифры"}],
+  "Литва":[{mask:"XXXXXX",desc:"до 6 символов",flexible:true}],
+  "Люксембург":[{mask:"XX0000",desc:"2 буквы + 4 цифры"}],
+  "Мальта":[{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Нидерланды":[{mask:"XX0000",desc:"2 буквы + 4 цифры"},{mask:"00XXX0",desc:"0 + 3 буквы + 0"},{mask:"0XXX00",desc:"0 + 3 буквы + 2 цифры"},{mask:"XX000X",desc:"2 буквы + 3 цифры + буква"}],
+  "Норвегия":[{mask:"XX00000",desc:"2 буквы + 5 цифр"}],
+  "Польша":[{mask:"XX00000",desc:"2 буквы + 5 цифр"},{mask:"XX0000X",desc:"2 буквы + 4 цифры + буква"},{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Португалия":[{mask:"000000",desc:"6 цифр"},{mask:"XX0000",desc:"2 буквы + 4 цифры"}],
+  "Румыния":[{mask:"XX00000",desc:"2 буквы + 5 цифр"},{mask:"X0000XX",desc:"1 буква + 4 цифры + 2 буквы"}],
+  "Словакия":[{mask:"XX000XX",desc:"2 буквы + 3 цифры + 2 буквы"}],
+  "Словения":[{mask:"XXXX000",desc:"4 буквы + 3 цифры"}],
+  "Финляндия":[{mask:"XX000",desc:"2 буквы + 3 цифры"},{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Франция (Монако, Андорра)":[{mask:"XX000XX",desc:"2 буквы + 3 цифры + 2 буквы"}],
+  "Хорватия":[{mask:"XX000XX",desc:"2 буквы + 3 цифры + 2 буквы"}],
+  "Чехия":[{mask:"X000000",desc:"1 буква + 6 цифр"},{mask:"0X00000",desc:"1 цифра + буква + 5 цифр"}],
+  "Швеция":[{mask:"XXX000",desc:"3 буквы + 3 цифры"}],
+  "Эстония":[{mask:"000XXX",desc:"3 цифры + 3 буквы"},{mask:"0000XX",desc:"4 цифры + 2 буквы"}]
+};
+
+function validatePlate(plate, country){
+  const clean = plate.toUpperCase().replace(/[\s-]/g,'');
+  if(!clean) return {valid:false, message:'Введите номер.'};
+  const formats = PLATE_FORMATS[country];
+  if(!formats) return {valid:true, message:'Формат неизвестен.'};
+  for(const f of formats){
+    if(f.flexible){
+      if(clean.length>=4 && clean.length<=8 && /^[A-Z0-9]+$/.test(clean) && /[0-9]/.test(clean))
+        return {valid:true, message:'✅ Подходит: '+f.desc};
+      continue;
+    }
+    let re='^';
+    for(const ch of f.mask) re += ch==='X'?'[A-Z]':ch==='0'?'[0-9]':ch;
+    re += '$';
+    if(new RegExp(re).test(clean))
+      return {valid:true, message:'✅ Номер корректен. Формат: '+f.desc};
+  }
+  return {valid:false, message:'❌ Неверный формат. Ожидается: '+formats.map(f=>f.desc).join(' ИЛИ ')};
+}
+
+const DEFAULT_ADMIN = {
+  name:'Администратор ЕС', email:'admin@gmail.com', password:'admin123',
+  birth:'1990-01-01', snils:'000-000-000 00', role:'Администратор',
+  passport:null, residence:null, children:[], car:null
+};
+
+/* ============ ХРАНИЛИЩЕ ============ */
+function getUsersLocal(){
+  const raw=localStorage.getItem(STORAGE_USERS);
+  if(!raw){ const init=[DEFAULT_ADMIN]; localStorage.setItem(STORAGE_USERS,JSON.stringify(init)); return init; }
+  return JSON.parse(raw);
+}
+function saveUsersLocal(u){ localStorage.setItem(STORAGE_USERS,JSON.stringify(u)); }
+
+async function loadUsers(){
+  if(fbReady && db){
+    try{
+      const snap = await db.ref('gues/users').once('value');
+      const data = snap.val();
+      if(data && Object.keys(data).length) return Object.values(data);
+      const init = getUsersLocal();
+      for(const u of init) await db.ref('gues/users/'+u.email.replace(/\./g,'_')).set(u);
+      return init;
+    }catch(e){ console.warn('Firebase read error', e); }
+  }
+  return getUsersLocal();
+}
+async function saveUsers(users){
+  saveUsersLocal(users);
+  if(fbReady && db){
+    try{
+      const obj={}; users.forEach(u=>obj[u.email.replace(/\./g,'_')]=u);
+      await db.ref('gues/users').set(obj);
+    }catch(e){ console.warn('Firebase write error', e); }
+  }
+}
+async function updateCurrentUser(){
+  const users = await loadUsers();
+  const idx = users.findIndex(u=>u.email===currentUser.email);
+  if(idx!==-1){ users[idx]=currentUser; await saveUsers(users); }
+}
+let currentUser = null;
+
+/* ============ АВТОРИЗАЦИЯ ============ */
+function showRegister(){
+  document.getElementById('loginForm').style.display='none';
+  document.getElementById('registerForm').style.display='block';
+  document.getElementById('authErr').textContent='';
+  document.getElementById('authOk').textContent='';
+}
+function showLogin(){
+  document.getElementById('registerForm').style.display='none';
+  document.getElementById('loginForm').style.display='block';
+  document.getElementById('authErr').textContent='';
+}
+async function doRegister(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('regPass').value;
+  const birth=document.getElementById('regBirth').value;
+  const snils=document.getElementById('regSnils').value.trim();
+  const err=document.getElementById('authErr'), ok=document.getElementById('authOk');
+  err.textContent=''; ok.textContent='';
+  if(!name) return err.textContent='Введите имя.';
+  if(!/^[^@\s]+@gmail\.com$/.test(email)) return err.textContent='Почта должна быть @gmail.com';
+  if(pass.length<6) return err.textContent='Пароль минимум 6 символов.';
+  if(!birth) return err.textContent='Укажите дату рождения.';
+  if(!snils) return err.textContent='Укажите СНИЛС.';
+  const users=await loadUsers();
+  if(users.find(u=>u.email===email)) return err.textContent='Такой пользователь уже есть.';
+  users.push({name,email,password:pass,birth,snils,role:'Гражданин ЕС',passport:null,residence:null,children:[],car:null});
+  await saveUsers(users);
+  ok.textContent='✅ Аккаунт создан! Войдите.';
+  setTimeout(()=>{ showLogin(); ok.textContent=''; },1200);
+}
+async function doLogin(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('loginPass').value;
+  const err=document.getElementById('authErr');
+  err.textContent='';
+  const users=await loadUsers();
+  const u=users.find(x=>x.email===email && x.password===pass);
+  if(!u) return err.textContent='Неверная почта или пароль.';
+  if(email!=='admin@gmail.com' && localStorage.getItem(STORAGE_MAINT)==='1'){
+    document.getElementById('maintenance').style.display='flex'; return;
+  }
+  currentUser=u;
+  localStorage.setItem(STORAGE_SESSION,email);
+  startApp();
+}
+function doLogout(){
+  localStorage.removeItem(STORAGE_SESSION);
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+  document.getElementById('loginPass').value='';
+}
+
+/* ============ ЗАПУСК ============ */
+function startApp(){
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  if(localStorage.getItem(STORAGE_THEME)==='dark') document.body.classList.add('dark');
+  else document.body.classList.remove('dark');
+  document.getElementById('sideName').textContent=currentUser.name;
+  document.getElementById('sideRole').textContent=currentUser.role;
+  document.getElementById('sideAvatar').textContent=currentUser.name.charAt(0).toUpperCase();
+  const st=document.getElementById('fbStatus');
+  if(fbReady && db){ st.textContent='Firebase: вкл'; st.className='firebase-status on'; }
+  else { st.textContent='Firebase: выкл'; st.className='firebase-status off'; }
+  const h=new Date().getHours();
+  let g='Доброй ночи';
+  if(h>=5&&h<12) g='Доброе утро';
+  else if(h>=12&&h<18) g='Добрый день';
+  else if(h>=18&&h<23) g='Добрый вечер';
+  document.getElementById('greeting').innerHTML=g+', <b>'+currentUser.name.split(' ')[0]+'</b>!';
+  renderServices();
+}
+function toggleTheme(){
+  document.body.classList.toggle('dark');
+  localStorage.setItem(STORAGE_THEME,document.body.classList.contains('dark')?'dark':'light');
+}
+
+/* ============ НАВИГАЦИЯ ============ */
+function openPage(page){
+  switch(page){
+    case 'newApp': renderNewApp(); break;
+    case 'askAdmin': renderAskAdmin(); break;
+    case 'doctor': renderDoctor(); break;
+    case 'school': renderSchool(); break;
+    case 'passport': renderPassport(); break;
+    case 'residence': renderResidence(); break;
+    case 'child': renderChild(); break;
+    case 'car': renderCar(); break;
+    case 'diary': renderDiary(); break;
+    case 'journal': renderJournal(); break;
+  }
+}
+function openModal(type){
+  const root=document.getElementById('modalRoot');
+  if(type==='profile'){
+    root.innerHTML='<div class="modal-bg" onclick="if(event.target===this) closeModal()"><div class="modal"><button class="close" onclick="closeModal()">✕</button>'+renderProfileHTML()+'</div></div>';
+  }
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* ============ СТРАНИЦЫ ============ */
+function renderServices(){
+  document.getElementById('content').innerHTML=`
+    <div class="welcome-center" style="padding:30px 0">
+      <h1>ГУЕС</h1>
+      <p>Выберите услугу слева или создайте новую заявку</p>
+    </div>
+    <div class="grid" style="margin-top:20px">
+      <div class="tile" onclick="openPage('doctor')"><div class="ic">🏥</div><h4>Запись к врачу</h4><span>Поликлиники ЕС</span></div>
+      <div class="tile" onclick="openPage('school')"><div class="ic">🎒</div><h4>Детский сад / Школа</h4><span>Запись ребёнка</span></div>
+      <div class="tile" onclick="openPage('passport')"><div class="ic">🛂</div><h4>Паспорт страны</h4><span>Создание документа</span></div>
+      <div class="tile" onclick="openPage('residence')"><div class="ic">🏠</div><h4>Место жительства</h4><span>Регистрация адреса</span></div>
+      <div class="tile" onclick="openPage('child')"><div class="ic">👶</div><h4>Детский аккаунт</h4><span>Для родителей</span></div>
+      <div class="tile" onclick="openPage('car')"><div class="ic">🚗</div><h4>Номер машины</h4><span>Регистрация авто</span></div>
+      <div class="tile" onclick="openPage('diary')"><div class="ic">📖</div><h4>Электронный дневник</h4><span>Школьникам</span></div>
+      <div class="tile" onclick="openPage('journal')"><div class="ic">📓</div><h4>Журнал учителя</h4><span>Для учителей</span></div>
+      <div class="tile" onclick="openPage('askAdmin')"><div class="ic">❓</div><h4>Задать вопрос</h4><span>Через Flype™</span></div>
+    </div>`;
+}
+function renderNewApp(){
+  document.getElementById('content').innerHTML=`
+    <div class="card"><h2>Новая заявка</h2><p>Выберите тип заявки.</p>
+      <div class="form-row" style="margin-top:16px"><label>Тип</label>
+        <select><option>Запись к врачу</option><option>Запись в детский сад</option><option>Запись в школу</option><option>Оформление паспорта</option><option>Регистрация места жительства</option><option>Регистрация автомобиля</option></select>
+      </div>
+      <div class="form-row"><label>Описание</label><input type="text" placeholder="Кратко опишите"></div>
+      <button class="btn primary" onclick="alert('Заявка отправлена!')">Отправить</button></div>`;
+}
+function renderAskAdmin(){
+  document.getElementById('content').innerHTML=`
+    <div class="card"><h2>Задать вопрос администратору</h2>
+      <p>Вопросы принимаются через мессенджер <b>Flype™</b>.</p>
+      <div style="margin-top:18px"><a href="https://korodvin.github.io/Flype/" target="_blank"><button class="btn primary">Открыть Flype</button></a></div></div>`;
+}
+function renderDoctor(){
+  document.getElementById('content').innerHTML=`
+    <div class="card"><h2>🏥 Запись к врачу</h2>
+      <div class="row-2" style="margin-top:16px">
+        <div class="form-row"><label>Специалист</label>
+          <select><option>Терапевт</option><option>Педиатр</option><option>Стоматолог</option><option>Окулист</option><option>Невролог</option><option>Кардиолог</option><option>Хирург</option><option>Дерматолог</option></select></div>
+        <div class="form-row"><label>Дата приёма</label><input type="date"></div>
+      </div>
+      <div class="form-row"><label>Поликлиника</label><select><option>Центральная поликлиника ЕС</option><option>Городская больница №1</option><option>Клиника «Евросоюз»</option></select></div>
+      <button class="btn primary" onclick="alert('Вы записаны!')">Записаться</button></div>`;
+}
+function renderSchool(){
+  document.getElementById('content').innerHTML=`
+    <div class="card"><h2>🎒 Запись в детский сад / школу</h2>
+      <div class="row-2" style="margin-top:16px">
+        <div class="form-row"><label>Тип</label><select><option>Детский сад</option><option>Школа</option></select></div>
+        <div class="form-row"><label>Имя ребёнка</label><input type="text"></div>
+      </div>
+      <div class="form-row"><label>Учреждение</label><select><option>Гимназия ЕС №1</option><option>Школа «Европа»</option><option>Детский сад «Солнышко»</option></select></div>
+      <button class="btn primary" onclick="alert('Заявление подано!')">Подать</button></div>`;
+}
+
+/* ============ ПАСПОРТ ============ */
+function renderPassport(){
+  const p=currentUser.passport, c=document.getElementById('content');
+  const kids=(currentUser.children||[]).map(k=>k.name).join(', ');
+  if(p){
+    c.innerHTML=`
+      <div class="card"><h2>🛂 Ваш паспорт ЕС</h2>
+        <div class="passport"><div class="flag">🇪🇺</div><h3>EUROPEAN UNION · PASSPORT</h3>
+          <div class="pass-body">
+            <div class="photo">${p.photo?'<img src="'+p.photo+'">':'ФОТО'}</div>
+            <div class="fields">
+              <div class="field"><small>ФИО</small><b>${p.fio}</b></div>
+              <div class="field"><small>ДАТА РОЖДЕНИЯ</small><b>${p.birth}</b></div>
+              <div class="field"><small>МЕСТО РОЖДЕНИЯ</small><b>${p.birthPlace||'—'}</b></div>
+              <div class="field"><small>ГРАЖДАНСТВО</small><b>${p.country}</b></div>
+              <div class="field"><small>№ ПАСПОРТА</small><b>${p.number}</b></div>
+              <div class="field"><small>СНИЛС</small><b>${p.snils}</b></div>
+              <div class="field"><small>МЕСТО ЖИТЕЛЬСТВА</small><b>${p.residence||(currentUser.residence?currentUser.residence.city+', '+currentUser.residence.address:'—')}</b></div>
+            </div>
+          </div>
+          ${kids?'<div class="children"><small>ДЕТИ: <b>'+kids+'</b></small></div>':''}
+        </div><br>
+        <button class="btn danger" onclick="deletePassport()">Удалить паспорт</button></div>`;
+    return;
+  }
+  c.innerHTML=`
+    <div class="card"><h2>🛂 Создание паспорта страны</h2>
+      <div class="form-row" style="margin-top:16px"><label>ФИО</label><input type="text" id="pFio" value="${currentUser.name}"></div>
+      <div class="row-2">
+        <div class="form-row"><label>Дата рождения</label><input type="date" id="pBirth" value="${currentUser.birth||''}"></div>
+        <div class="form-row"><label>Место рождения</label><input type="text" id="pBirthPlace"></div>
+      </div>
+      <div class="row-2">
+        <div class="form-row"><label>Гражданство</label><select id="pCountry">${COUNTRIES.map(c=>'<option>'+c+'</option>').join('')}</select></div>
+        <div class="form-row"><label>СНИЛС</label><input type="text" id="pSnils" value="${currentUser.snils||''}"></div>
+      </div>
+      <div class="form-row"><label>Место жительства</label><input type="text" id="pResidence" value="${currentUser.residence?currentUser.residence.city+', '+currentUser.residence.address:''}"></div>
+      <div class="form-row"><label>Фотография</label><input type="file" id="pPhoto" accept="image/*"></div>
+      <button class="btn primary" onclick="createPassport()">Создать паспорт</button></div>`;
+}
+function createPassport(){
+  const fio=document.getElementById('pFio').value.trim();
+  const birth=document.getElementById('pBirth').value;
+  const birthPlace=document.getElementById('pBirthPlace').value.trim();
+  const country=document.getElementById('pCountry').value;
+  const snils=document.getElementById('pSnils').value.trim();
+  const residence=document.getElementById('pResidence').value.trim();
+  const file=document.getElementById('pPhoto').files[0];
+  if(!fio||!birth||!snils) return alert('Заполните обязательные поля!');
+  const finish=async photo=>{
+    const number='EU'+Math.floor(10000000+Math.random()*89999999);
+    currentUser.passport={fio,birth,birthPlace,country,snils,residence,number,photo:photo||null};
+    await updateCurrentUser(); renderPassport();
+  };
+  if(file){ const r=new FileReader(); r.onload=e=>finish(e.target.result); r.readAsDataURL(file); }
+  else finish(null);
+}
+async function deletePassport(){
+  if(!confirm('Удалить паспорт?')) return;
+  currentUser.passport=null; await updateCurrentUser(); renderPassport();
+}
+
+/* ============ МЕСТО ЖИТЕЛЬСТВА ============ */
+function renderResidence(){
+  const r=currentUser.residence, c=document.getElementById('content');
+  if(r){
+    c.innerHTML='<div class="card"><h2>🏠 Место жительства</h2><p><b>Регион:</b> '+r.region+'</p><p><b>Город:</b> '+r.city+'</p><p><b>Адрес:</b> '+r.address+'</p><br><button class="btn danger" onclick="deleteResidence()">Изменить</button></div>';
+    return;
+  }
+  c.innerHTML=`
+    <div class="card"><h2>🏠 Регистрация места жительства</h2>
+      <div class="form-row" style="margin-top:16px"><label>Республика / область</label><input type="text" id="rRegion"></div>
+      <div class="form-row"><label>Город</label><input type="text" id="rCity"></div>
+      <div class="form-row"><label>Адрес</label><input type="text" id="rAddress" placeholder="Улица, дом, кв."></div>
+      <button class="btn primary" onclick="saveResidence()">Сохранить</button></div>`;
+}
+async function saveResidence(){
+  const region=document.getElementById('rRegion').value.trim();
+  const city=document.getElementById('rCity').value.trim();
+  const address=document.getElementById('rAddress').value.trim();
+  if(!region||!city||!address) return alert('Заполните все поля!');
+  currentUser.residence={region,city,address};
+  await updateCurrentUser(); renderResidence();
+}
+async function deleteResidence(){ currentUser.residence=null; await updateCurrentUser(); renderResidence(); }
+
+/* ============ ДЕТИ ============ */
+function renderChild(){
+  const kids=currentUser.children||[], c=document.getElementById('content');
+  const list=kids.map(k=>'<div class="contact" style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px"><div class="avatar" style="background:#0ea5e9">'+k.name.charAt(0)+'</div><div class="txt"><h4>'+k.name+'</h4><span>Дата рождения: '+k.birth+'</span></div></div>').join('');
+  c.innerHTML=`
+    <div class="card"><h2>👶 Детские аккаунты</h2>
+      <div style="margin:16px 0">
+        <div class="form-row"><label>Имя ребёнка</label><input type="text" id="cName"></div>
+        <div class="form-row"><label>Дата рождения</label><input type="date" id="cBirth"></div>
+        <button class="btn primary" onclick="addChild()">Создать детский аккаунт</button>
+      </div>
+      <h2 style="font-size:15px;margin-top:20px">Мои дети</h2>
+      <div style="margin-top:10px">${list||'<p>Пока нет детей.</p>'}</div></div>`;
+}
+async function addChild(){
+  const name=document.getElementById('cName').value.trim();
+  const birth=document.getElementById('cBirth').value;
+  if(!name||!birth) return alert('Заполните поля!');
+  currentUser.children=currentUser.children||[];
+  currentUser.children.push({name,birth});
+  await updateCurrentUser(); renderChild();
+}
+
+/* ============ МАШИНА ============ */
+function renderCar(){
+  const car=currentUser.car, c=document.getElementById('content');
+  if(car){
+    c.innerHTML='<div class="card"><h2>🚗 Мой автомобиль</h2><p><b>Номер:</b> '+car.plate+'</p><p><b>Марка:</b> '+(car.brand||'—')+'</p><p><b>Модель:</b> '+(car.model||'—')+'</p><p><b>Страна:</b> '+car.country+'</p><br><button class="btn danger" onclick="deleteCar()">Удалить</button></div>';
+    return;
+  }
+  c.innerHTML=`
+    <div class="card"><h2>🚗 Регистрация номера машины</h2>
+      <p>Номер проверяется по формату страны.</p>
+      <div class="form-row" style="margin-top:16px"><label>Страна</label><select id="carCountry" onchange="updatePlateHint()">${COUNTRIES.map(c=>'<option>'+c+'</option>').join('')}</select></div>
+      <div class="form-row"><label>Номер машины</label><input type="text" id="carPlate" placeholder="Например: B-MW1234" oninput="updatePlateHint()"><small id="plateHint" style="display:block;margin-top:6px;font-size:12px;color:var(--muted);"></small></div>
+      <div class="row-2">
+        <div class="form-row"><label>Марка</label><input type="text" id="carBrand"></div>
+        <div class="form-row"><label>Модель</label><input type="text" id="carModel"></div>
+      </div>
+      <button class="btn primary" onclick="saveCar()">Сохранить</button></div>`;
+  updatePlateHint();
+}
+function updatePlateHint(){
+  const country=document.getElementById('carCountry')?.value;
+  const plate=document.getElementById('carPlate')?.value||'';
+  const hint=document.getElementById('plateHint');
+  if(!hint||!country) return;
+  const formats=PLATE_FORMATS[country];
+  if(!formats){ hint.textContent='Формат не задан.'; return; }
+  if(!plate){ hint.textContent='Ожидаемые форматы: '+formats.map(f=>f.desc).join(' ИЛИ '); hint.style.color='var(--muted)'; return; }
+  const res=validatePlate(plate,country);
+  hint.textContent=res.message;
+  hint.style.color=res.valid?'#16a34a':'#d92d20';
+}
+async function saveCar(){
+  const plate=document.getElementById('carPlate').value.trim();
+  const brand=document.getElementById('carBrand').value.trim();
+  const model=document.getElementById('carModel').value.trim();
+  const country=document.getElementById('carCountry').value;
+  if(!plate) return alert('Укажите номер!');
+  const check=validatePlate(plate,country);
+  if(!check.valid && !confirm(check.message+'\n\nВсё равно сохранить?')) return;
+  currentUser.car={plate,brand,model,country};
+  await updateCurrentUser(); renderCar();
+}
+async function deleteCar(){ currentUser.car=null; await updateCurrentUser(); renderCar(); }
+
+/* ============ ДНЕВНИК ============ */
+const SUBJECTS=[
+  {name:'Математика',grades:[5,4,5]},{name:'Русский язык',grades:[4,4,5]},{name:'Литература',grades:[5,5]},
+  {name:'История',grades:[4,5]},{name:'География',grades:[5,5,4]},{name:'Биология',grades:[4,3,4]},
+  {name:'Физика',grades:[5,4]},{name:'Химия',grades:[4,4]},{name:'Английский язык',grades:[5,5,5]},{name:'Физкультура',grades:[5,5]}
+];
+const HOMEWORK=[
+  {subj:'Математика',task:'§14, задачи 5–12'},
+  {subj:'Русский язык',task:'Упр. 208, повторить правила'},
+  {subj:'История',task:'Прочитать главу 7, ответить на вопросы'},
+  {subj:'Биология',task:'Подготовить доклад о клетке'},
+  {subj:'Английский язык',task:'Unit 5, упр. 3 письменно'}
+];
+const SCHEDULE = {
+  'Понедельник':[{n:1,subj:'Математика',time:'08:30–09:15'},{n:2,subj:'Русский язык',time:'09:25–10:10'},{n:3,subj:'Литература',time:'10:25–11:10'},{n:4,subj:'История',time:'11:20–12:05'},{n:5,subj:'Английский язык',time:'12:15–13:00'},{n:6,subj:'Физкультура',time:'13:10–13:55'}],
+  'Вторник':[{n:1,subj:'Физика',time:'08:30–09:15'},{n:2,subj:'Математика',time:'09:25–10:10'},{n:3,subj:'Химия',time:'10:25–11:10'},{n:4,subj:'Биология',time:'11:20–12:05'},{n:5,subj:'География',time:'12:15–13:00'}],
+  'Среда':[{n:1,subj:'Русский язык',time:'08:30–09:15'},{n:2,subj:'Литература',time:'09:25–10:10'},{n:3,subj:'Математика',time:'10:25–11:10'},{n:4,subj:'История',time:'11:20–12:05'},{n:5,subj:'Английский язык',time:'12:15–13:00'},{n:6,subj:'Информатика',time:'13:10–13:55'}],
+  'Четверг':[{n:1,subj:'Математика',time:'08:30–09:15'},{n:2,subj:'Физика',time:'09:25–10:10'},{n:3,subj:'Химия',time:'10:25–11:10'},{n:4,subj:'География',time:'11:20–12:05'},{n:5,subj:'Физкультура',time:'12:15–13:00'}],
+  'Пятница':[{n:1,subj:'Биология',time:'08:30–09:15'},{n:2,subj:'Математика',time:'09:25–10:10'},{n:3,subj:'История',time:'10:25–11:10'},{n:4,subj:'Литература',time:'11:20–12:05'},{n:5,subj:'Английский язык',time:'12:15–13:00'},{n:6,subj:'ОБЖ',time:'13:10–13:55'}]
+};
+function gradeClass(g){ return g===5?'g5':g===4?'g4':g===3?'g3':'g2'; }
+function renderDiary(){
+  const c=document.getElementById('content');
+  if(currentUser.role==='Учитель'){
+    c.innerHTML='<div class="card"><h2>📖 Дневник</h2><p>Вы вошли как учитель. Вам доступен журнал.</p><br><button class="btn primary" onclick="openPage(\'journal\')">Перейти в журнал</button></div>';
+    return;
+  }
+  const rows=SUBJECTS.map(s=>'<tr><td><b>'+s.name+'</b></td><td>'+s.grades.map(g=>'<span class="grade '+gradeClass(g)+'">'+g+'</span>').join('')+'</td><td>'+(s.grades.reduce((a,b)=>a+b,0)/s.grades.length).toFixed(2)+'</td></tr>').join('');
+  const hw=HOMEWORK.map(h=>'<div class="hw"><b>'+h.subj+':</b> '+h.task+'</div>').join('');
+  const scheduleHtml=Object.entries(SCHEDULE).map(([day,lessons])=>{
+    const lr=lessons.map(l=>'<div class="lesson-row"><span class="lesson-num">'+l.n+'.</span><span class="lesson-subj">'+l.subj+'</span><span class="lesson-time">'+l.time+'</span></div>').join('');
+    return '<div class="schedule-day"><h3>'+day+'</h3>'+lr+'</div>';
+  }).join('');
+  c.innerHTML=`
+    <div class="card"><h2>📖 Электронный дневник</h2>
+      <p>Ученик: <b>${currentUser.name}</b> · Класс: 9«А»</p>
+      <table class="table"><thead><tr><th>Предмет</th><th>Оценки</th><th>Средний</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="card"><h2>📅 Расписание уроков</h2>${scheduleHtml}</div>
+    <div class="card"><h2>📚 Домашнее задание</h2>${hw}</div>`;
+}
+
+/* ============ ЖУРНАЛ ============ */
+const JOURNAL_STUDENTS=['Андреев Пётр','Белова Мария','Волков Иван','Григорьева Анна','Дмитриев Олег','Егорова София','Жуков Артём','Зайцева Ольга','Иванов Никита','Кузнецова Дарья'];
+function renderJournal(){
+  const c=document.getElementById('content');
+  if(currentUser.role!=='Учитель'){
+    c.innerHTML='<div class="card"><h2>📓 Журнал учителя</h2><div class="placeholder-msg"><div class="ic">🔒</div><h3>Доступ запрещён</h3><p>Только для роли «Учитель».</p></div></div>';
+    return;
+  }
+  const rows=JOURNAL_STUDENTS.map((s,i)=>{
+    const gs=[3,4,5].map(()=>Math.floor(Math.random()*3)+3);
+    return '<tr><td>'+(i+1)+'</td><td><b>'+s+'</b></td><td>'+gs.map(g=>'<span class="grade '+gradeClass(g)+'">'+g+'</span>').join('')+'</td><td><button class="btn" style="padding:4px 10px;font-size:12px" onclick="alert(\'Демо\')">+ Оценка</button></td></tr>';
+  }).join('');
+  c.innerHTML='<div class="card"><h2>📓 Журнал учителя — 9«А»</h2><p>Предмет: <b>Математика</b> · '+new Date().toLocaleDateString('ru-RU')+'</p><table class="table"><thead><tr><th>№</th><th>Ученик</th><th>Оценки</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+
+/* ============ ПРОФИЛЬ ============ */
+function renderProfileHTML(){
+  const isAdmin=currentUser.email==='admin@gmail.com';
+  const maint=localStorage.getItem(STORAGE_MAINT)==='1';
+  return `
+    <h2>Профиль пользователя</h2>
+    <div class="form-row"><label>Имя</label><input type="text" value="${currentUser.name}" disabled></div>
+    <div class="form-row"><label>Почта</label><input type="text" value="${currentUser.email}" disabled></div>
+    <div class="form-row"><label>Дата рождения</label><input type="text" value="${currentUser.birth||'—'}" disabled></div>
+    <div class="form-row"><label>СНИЛС</label><input type="text" value="${currentUser.snils||'—'}" disabled></div>
+    <div class="form-row"><label>Профессия / роль</label>
+      <select id="jobSelect" onchange="changeJob()">
+        ${PROFESSIONS.map(p=>'<option '+(currentUser.role===p?'selected':'')+'>'+p+'</option>').join('')}
+        ${isAdmin?'<option '+(currentUser.role==='Администратор'?'selected':'')+'>Администратор</option>':''}
+      </select></div>
+    ${isAdmin?'<div class="card" style="margin-top:14px;background:var(--sidebar-head)"><h2 style="font-size:15px">⚙️ Админ-панель</h2><p style="font-size:13px">Тех. работы: <b>'+(maint?'ВКЛЮЧЕНЫ':'выключены')+'</b></p><div style="margin-top:12px"><button class="btn '+(maint?'danger':'primary')+'" onclick="toggleMaintenance()">'+(maint?'Выключить':'Включить')+'</button></div></div>':''}`;
+}
+async function changeJob(){
+  const val=document.getElementById('jobSelect').value;
+  currentUser.role=val;
+  await updateCurrentUser();
+  document.getElementById('sideRole').textContent=val;
+}
+function toggleMaintenance(){
+  const cur=localStorage.getItem(STORAGE_MAINT)==='1';
+  localStorage.setItem(STORAGE_MAINT,cur?'0':'1');
+  openModal('profile');
+}
+
+/* ============ АВТО-ВХОД ============ */
+window.addEventListener('DOMContentLoaded', async ()=>{
+  const session=localStorage.getItem(STORAGE_SESSION);
+  if(session){
+    const users=await loadUsers();
+    const u=users.find(x=>x.email===session);
+    if(u){
+      if(u.email!=='admin@gmail.com' && localStorage.getItem(STORAGE_MAINT)==='1'){
+        document.getElementById('maintenance').style.display='flex';
+      } else { currentUser=u; startApp(); }
+    }
+  }
+});
+</script>
+</body>
+</html>
